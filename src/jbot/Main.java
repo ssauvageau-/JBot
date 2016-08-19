@@ -1,5 +1,6 @@
 package jbot;
 
+import java.awt.event.KeyEvent;
 import java.util.HashMap;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
@@ -40,12 +41,17 @@ public class Main {
     
     public static void main(String[] args) {
         instruction = "-hold -3 -for -12 -seconds -on -F12\n-hold -4 -for -12 -seconds -on -f12";
-        String[] codes = codeBot(instruction);
+        String[] codes = null;
+        try{
+            codes = codeBot(instruction);  
+        } catch (SecurityException | NoSuchFieldException | IllegalAccessException ex) {
+            System.exit(0);
+        }
         CyclicBarrier gate = new CyclicBarrier(codes.length + 1);
         HashMap<Thread,Integer> threads = new HashMap<>();
         for(int i = 0; i < codes.length; i++)
         {
-            jBot jb = new jBot(i + "_bot", codes[i], gate, -1, keyCodes[i], holdCodes[i]);
+            jBot jb = new jBot("Bot_" + i, codes[i], gate, -1, keyCodes[i], holdCodes[i]);
             threads.put(jb, keyCodes[i]);
             jb.start();
         }
@@ -56,11 +62,12 @@ public class Main {
         }
     }
 
-    public static String[] codeBot(String instr) {
+    public static String[] codeBot(String instr) throws SecurityException, NoSuchFieldException, IllegalAccessException {
         String[] instructions = instr.toLowerCase().replace(" ","").split("\n");
         StringBuilder sb = new StringBuilder();
         String[] encoded = new String[instructions.length];
         keyCodes = new int[encoded.length];
+        holdCodes = new boolean[encoded.length];
         for (int i = 0; i < instructions.length; i++) {
             String str = instructions[i];
             if (!str.contains("on") || !str.contains("-") || !str.contains("on") || !(str.contains("press") || str.contains("hold"))) {
@@ -76,18 +83,18 @@ public class Main {
                 continue;
             }
             String[] pieces = str.split("-");
-            if (pieces[0].contains("press")) {
+            if (pieces[1].contains("press")) {
                 holdCodes[i] = false;
-                String key = pieces[1];
+                String key = pieces[2];
                 sb.append("try {\n" + " java.awt.Robot rob = new java.awt.Robot();\n rob.keyPress(java.awt.event.KeyEvent.VK_")
                         .append(key).append(");\n rob.delay(2);\n rob.keyRelease(java.awt.event.KeyEvent.VK_")
                         .append(key).append(");\n"
                         + " \n");
-                if(pieces[2].contains("every"))
+                if(pieces[3].contains("every"))
                 {
-                    int timer = Integer.parseInt(pieces[3].replace(" ", ""));
+                    int timer = Integer.parseInt(pieces[4].replace(" ", ""));
                     int multiplier;
-                    switch(pieces[4])
+                    switch(pieces[5])
                     {
                         case "seconds" : multiplier = 1000;
                             break;
@@ -100,16 +107,16 @@ public class Main {
                     }
                     sb.append("rob.delay(").append(timer * multiplier).append(");\n");
                 }
-            } else if (pieces[0].contains("hold")) {
+            } else if (pieces[1].contains("hold")) {
                 holdCodes[i] = true;
-                String key = pieces[1].replace(" ","");
+                String key = pieces[2].replace(" ","");
                 sb.append("try {\n" + " java.awt.Robot rob = new java.awt.Robot();\n rob.keyPress(java.awt.event.KeyEvent.VK_")
                         .append(key).append(");\n");
-                if(pieces[2].contains("for"))
+                if(pieces[3].contains("for"))
                 {
-                    int timer = Integer.parseInt(pieces[3].replace(" ", ""));
-                    int multiplier = 0;
-                    switch(pieces[4])
+                    int timer = Integer.parseInt(pieces[4].replace(" ", ""));
+                    int multiplier;
+                    switch(pieces[5])
                     {
                         case "seconds" : multiplier = 1000;
                             break;
@@ -131,14 +138,18 @@ public class Main {
                 invalidCode(encoded);
                 continue;
             }
-            if(pieces[5].contains("on"))
-                keyCodes[i] = Integer.parseInt(pieces[6].replace(" ", ""));
+            if(pieces[6].contains("on"))
+            {
+                String code = "VK_" + pieces[7].replace(" ","").toUpperCase();
+                keyCodes[i] = (int)KeyEvent.class.getField(code).getInt(null);
+            }
             else
             {
                 invalidCode(encoded);
                 continue;
             }
             sb.append(" } catch (java.awt.AWTException ex){}");
+            encoded[i] = sb.toString();
             sb.setLength(0);
         }
         return encoded;

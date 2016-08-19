@@ -88,8 +88,7 @@ public class Main {
                 String key = pieces[2];
                 sb.append("try {\n" + " java.awt.Robot rob = new java.awt.Robot();\n rob.keyPress(java.awt.event.KeyEvent.VK_")
                         .append(key).append(");\n rob.delay(2);\n rob.keyRelease(java.awt.event.KeyEvent.VK_")
-                        .append(key).append(");\n"
-                        + " \n");
+                        .append(key).append(");\n");
                 if(pieces[3].contains("every"))
                 {
                     int timer = Integer.parseInt(pieces[4].replace(" ", ""));

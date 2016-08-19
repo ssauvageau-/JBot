@@ -43,7 +43,6 @@ public class jBot extends Thread {
         } catch (Exception ex) {
             Logger.getLogger(jBot.class.getName()).log(Level.SEVERE, null, ex);
         }
-;
     }
     
     public void runCode(String s, String fn) throws Exception{

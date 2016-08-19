@@ -40,23 +40,32 @@ public class Main {
     static boolean[] holdCodes;
     
     public static void main(String[] args) {
-        instruction = "-hold -3 -for -12 -seconds -on -F12\n-hold -4 -for -12 -seconds -on -f12";
+        instruction = "-hold -4 -for -1 -second -on -f12\n";
         String[] codes = null;
         try{
             codes = codeBot(instruction);  
         } catch (SecurityException | NoSuchFieldException | IllegalAccessException ex) {
             System.exit(0);
         }
-        CyclicBarrier gate = new CyclicBarrier(codes.length + 1);
+        int j = codes.length;
+        for(String s : codes)
+        {
+            if(s == null || s.equals(""))
+                j--;
+        }
+        CyclicBarrier gate = new CyclicBarrier(j + 1);
         HashMap<Thread,Integer> threads = new HashMap<>();
         for(int i = 0; i < codes.length; i++)
         {
+            if(codes[i] == null)
+                continue;
             jBot jb = new jBot("Bot_" + i, codes[i], gate, -1, keyCodes[i], holdCodes[i]);
             threads.put(jb, keyCodes[i]);
             jb.start();
         }
         try{
             gate.await();
+            System.out.println("Threads running!");
         } catch (InterruptedException | BrokenBarrierException ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -78,7 +87,7 @@ public class Main {
                 invalidCode(encoded);
                 continue;
             }
-            if ((str.contains("every") || str.contains("for")) && !(str.contains("seconds") || str.contains("minutes") || str.contains("hours"))) {
+            if ((str.contains("every") || str.contains("for")) && !(str.contains("seconds") || str.contains("minutes") || str.contains("hours") || str.contains("second") || str.contains("minute") || str.contains("hour"))) {
                 invalidCode(encoded);
                 continue;
             }
@@ -100,6 +109,12 @@ public class Main {
                         case "minutes" : multiplier = 60000;
                             break;
                         case "hours" : multiplier = 36000000;
+                            break;
+                        case "second" : multiplier = 1000;
+                            break;
+                        case "minute" : multiplier = 60000;
+                            break;
+                        case "hour" : multiplier = 36000000;
                             break;
                         default : invalidCode(encoded); 
                             continue;
@@ -123,10 +138,17 @@ public class Main {
                             break;
                         case "hours" : multiplier = 36000000;
                             break;
+                        case "second" : multiplier = 1000;
+                            break;
+                        case "minute" : multiplier = 60000;
+                            break;
+                        case "hour" : multiplier = 36000000;
+                            break;
                         default : invalidCode(encoded); 
                             continue;
                     }
                     sb.append("rob.delay(").append(timer * multiplier).append(");\n");
+                    sb.append("rob.keyRelease(java.awt.event.KeyEvent.VK_").append(key).append(");\n");
                 }
                 else
                 {
@@ -156,6 +178,8 @@ public class Main {
     
     private static void invalidCode(String[] str)
     {
+        if(str.length == 1)
+            return;
         String[] tmp = new String[str.length - 1];
         int j = 0;
         while(str[j] != null)

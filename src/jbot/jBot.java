@@ -50,7 +50,9 @@ public class jBot extends Thread {
         StandardJavaFileManager sjfm = jc.getStandardFileManager(null, null, null);
         File jf = new File(fn + ".java"); //create file in current working directory
         PrintWriter pw = new PrintWriter(jf);
-        pw.println("public class " + fn + " {public static void main(){"+s+"}}");
+        StringBuilder sb = new StringBuilder();
+        sb.append("public class ").append(fn).append(" {public static void main(){").append(s).append("}}");
+        pw.println(sb.toString());
         pw.close();
         Iterable fO = sjfm.getJavaFileObjects(jf);
         if(!jc.getTask(null,sjfm,null,null,null,fO).call()) { //compile the code

@@ -5,6 +5,7 @@ import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,6 +41,10 @@ public class jBot extends Thread {
         try{
             cb.await();
             runCode(instruction, this.getName());
+        } catch (BrokenBarrierException ex) {
+            this.start();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(jBot.class.getName()).log(Level.SEVERE, null, ex);
         } catch (Exception ex) {
             Logger.getLogger(jBot.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -62,13 +67,23 @@ public class jBot extends Thread {
         URLClassLoader ucl = new URLClassLoader(urls);
         Object o = ucl.loadClass(fn).newInstance();
         Method m = o.getClass().getMethod("main");
-        running = true;
+        System.out.println("Beginning to run " + fn + ".java");
+        int i = 0;
         if(!holder)
             while(!stop)
                 while(running)
+                {
                     m.invoke(o);
+                    System.out.println("Ran " + fn + ".java " + ++i + " times");
+                }
         else
-            m.invoke(o);
+            while(!stop)
+                if(running)
+                {
+                    m.invoke(o);
+                    System.out.println("Ran " + fn + ".java " + ++i + " times");
+                }
+        System.out.println("Finished running " + fn + ".java");
     }
     
     public void testBot()
